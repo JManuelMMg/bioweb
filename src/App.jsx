@@ -10,20 +10,22 @@ import SensorCard from './components/SensorCard';
 import History from './components/History';
 import './App.css';
 
-// Objeto de configuración para los niveles de riesgo
+// Objeto de configuración para los niveles de producción del biodigestor
 const levels = {
-  NORMAL: { limit: 400, color: '#2c5c2d', label: 'NORMAL' },
-  ATENCION: { limit: 600, color: '#b8860b', label: 'ATENCION' },
-  PELIGRO: { limit: 1000, color: '#b22222', label: 'PELIGRO' },
-  CRITICO: { limit: Infinity, color: '#8b0000', label: 'CRITICO' },
+  SIN_PRODUCCION: { limit: 150, color: '#b22222', label: 'SIN PRODUCCION' }, // Rojo - Alerta, no hay producción
+  PROD_BAJA:      { limit: 300, color: '#b8860b', label: 'PROD. BAJA' },     // Naranja - Producción baja
+  PROD_MEDIA:     { limit: 600, color: '#6B8E23', label: 'PROD. MEDIA' },    // Verde Oliva - Producción saludable
+  PROD_ALTA:      { limit: Infinity, color: '#2c5c2d', label: 'PROD. ALTA' },   // Verde Oscuro - Producción óptima
 };
 
+// Devuelve el nivel de producción basado en el PPM de gas.
 const getGasLevel = (ppm) => {
-  if (ppm < levels.NORMAL.limit) return levels.NORMAL;
-  if (ppm < levels.ATENCION.limit) return levels.ATENCION;
-  if (ppm < levels.PELIGRO.limit) return levels.PELIGRO;
-  return levels.CRITICO;
+  if (ppm < levels.SIN_PRODUCCION.limit) return levels.SIN_PRODUCCION;
+  if (ppm < levels.PROD_BAJA.limit) return levels.PROD_BAJA;
+  if (ppm < levels.PROD_MEDIA.limit) return levels.PROD_MEDIA;
+  return levels.PROD_ALTA;
 };
+
 
 function App() {
   const [readingsBySensor, setReadingsBySensor] = useState({});
@@ -119,20 +121,33 @@ function App() {
     link.click();
   };
 
-  const getHighestRiskLevel = () => {
-      let highestLevel = levels.NORMAL;
-      Object.values(readingsBySensor).forEach(readings => {
-          if (readings && readings.length > 0) {
-              const currentLevel = getGasLevel(readings[0].ppm);
-              if (currentLevel.limit > highestLevel.limit) {
-                  highestLevel = currentLevel;
-              }
-          }
-      });
-      return highestLevel;
+  // Determina el nivel de alerta general. La alerta se basa en el sensor con la MENOR producción.
+  const getOverallAlertLevel = () => {
+    // Inicia con el nivel más alto de producción posible.
+    let lowestProductionLevel = levels.PROD_ALTA;
+    const sensorIds = Object.keys(readingsBySensor);
+
+    // Si no hay sensores o lecturas, por defecto se muestra "SIN PRODUCCION".
+    if (sensorIds.length === 0 || sensorIds.every(id => !readingsBySensor[id] || readingsBySensor[id].length === 0)) {
+      return levels.SIN_PRODUCCION;
+    }
+
+    sensorIds.forEach(sensorId => {
+      const readings = readingsBySensor[sensorId];
+      if (readings && readings.length > 0) {
+        const currentLevel = getGasLevel(readings[0].ppm);
+        // Si el nivel actual tiene un límite inferior, significa una producción más baja.
+        // Se actualiza para reflejar el estado más crítico (producción más baja).
+        if (currentLevel.limit < lowestProductionLevel.limit) {
+          lowestProductionLevel = currentLevel;
+        }
+      }
+    });
+
+    return lowestProductionLevel;
   };
 
-  const overallLevel = getHighestRiskLevel();
+  const overallLevel = getOverallAlertLevel();
   const sensorIds = Object.keys(readingsBySensor);
 
   return (
