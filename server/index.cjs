@@ -1,86 +1,85 @@
 
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
+const { WebSocketServer } = require('ws');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 const PORT = 9090;
 
-// Objeto para almacenar las lecturas, organizado por sensorId.
-// Ejemplo: { "sensor-01": [lectura1, lectura2], "sensor-02": [...] }
-let readingsBySensor = {};
-const MAX_READINGS_PER_SENSOR = 100;
+// Almacenamiento en memoria para las lecturas de cada sensor
+const readingsBySensor = {};
 
-// Endpoint para que los dispositivos Arduino envíen datos
+// Middleware para parsear JSON (aunque aquí usamos query params)
+app.use(express.json());
+
+// Función para retransmitir a todos los clientes conectados
+const broadcast = (data) => {
+  wss.clients.forEach(client => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
+
+// Endpoint para que los ESP envíen sus datos vía HTTP GET
 app.get('/api/readings', (req, res) => {
-  const { ppm, raw, rs, level, sensorId = 'main_sensor' } = req.query; // Se añade sensorId, con un valor por defecto
+  // Extraemos los datos de los query parameters
+  const { ppm, raw, rs, level } = req.query;
 
-  if (ppm && raw && rs && level) {
-    const newReading = {
-      sensorId, // Se incluye el ID del sensor en la lectura
-      ppm: parseFloat(ppm),
-      raw: parseInt(raw),
-      rs: parseFloat(rs),
-      level: level,
-      timestamp: new Date(),
-    };
+  // Intentamos obtener un sensorId de la petición, si no, lo creamos a partir de la IP.
+  // Esto permite que varios sensores funcionen sin necesidad de hardcodear un ID.
+  let sensorId = req.query.sensorId || `sensor-${req.ip}`;
 
-    // Si es la primera vez que vemos este sensor, inicializamos su array
-    if (!readingsBySensor[sensorId]) {
-      readingsBySensor[sensorId] = [];
-    }
-
-    // Añadir la nueva lectura y mantener solo las últimas N
-    readingsBySensor[sensorId].unshift(newReading);
-    readingsBySensor[sensorId] = readingsBySensor[sensorId].slice(0, MAX_READINGS_PER_SENSOR);
-
-    // Enviar la nueva lectura a todos los clientes WebSocket conectados
-    // El payload ahora contiene el sensorId, para que el frontend sepa qué actualizar
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ type: 'new_reading', payload: newReading }));
-      }
-    });
-
-    console.log(`Lectura recibida de [${sensorId}]:`, newReading);
-    res.status(200).send('OK');
-  } else {
-    res.status(400).send('Faltan parámetros');
+  // Validamos que el PPM exista, si no, es una mala petición.
+  if (ppm === undefined || ppm === null) {
+    return res.status(400).json({ error: 'El parámetro PPM es requerido.' });
   }
+
+  // Creamos el objeto de la nueva lectura
+  const newReading = {
+    sensorId,
+    ppm: parseFloat(ppm),
+    raw: parseInt(raw, 10),
+    rs: parseFloat(rs),
+    level: level || 'desconocido',
+    timestamp: new Date().toISOString(),
+  };
+
+  // Si es la primera lectura de este sensor, inicializamos su array
+  if (!readingsBySensor[sensorId]) {
+    readingsBySensor[sensorId] = [];
+  }
+
+  // Añadimos la nueva lectura al principio del array (para que esté la más reciente primero)
+  readingsBySensor[sensorId].unshift(newReading);
+
+  // Limitamos el historial en memoria a las últimas 200 lecturas por sensor
+  if (readingsBySensor[sensorId].length > 200) {
+    readingsBySensor[sensorId].pop();
+  }
+
+  // Retransmitimos la nueva lectura a todos los clientes WebSocket (el frontend)
+  broadcast({
+    type: 'new_reading',
+    payload: newReading,
+  });
+
+  // Respondemos al ESP con éxito
+  res.status(200).json({ message: 'Lectura recibida', data: newReading });
 });
 
-// Endpoint para obtener el historial de lecturas (ahora también filtra por sensor)
-app.get('/api/history', (req, res) => {
-  const { startDate, endDate, sensorId = 'main_sensor' } = req.query;
-  
-  const sensorHistory = readingsBySensor[sensorId] || [];
-  let filteredReadings = sensorHistory;
-
-  if (startDate || endDate) {
-    try {
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
-
-      filteredReadings = sensorHistory.filter(reading => {
-        const readingDate = new Date(reading.timestamp);
-        return (!start || readingDate >= start) && (!end || readingDate <= end);
-      });
-    } catch (error) {
-      // Ignorar fechas inválidas y devolver el historial completo del sensor
-    }
-  }
-  res.json(filteredReadings);
-});
-
-// Manejo de conexiones WebSocket
+// WebSocket connection handler
 wss.on('connection', (ws) => {
   console.log('Cliente WebSocket conectado');
 
-  // Enviar todo el historial de todos los sensores al nuevo cliente
-  ws.send(JSON.stringify({ type: 'history', payload: readingsBySensor }));
+  // Al conectarse un nuevo cliente, le enviamos todo el historial disponible
+  ws.send(JSON.stringify({
+    type: 'history',
+    payload: readingsBySensor,
+  }));
 
   ws.on('close', () => {
     console.log('Cliente WebSocket desconectado');
