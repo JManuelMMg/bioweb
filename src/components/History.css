@@ -1,0 +1,90 @@
+
+.history-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: rgba(23, 33, 43, 0.85);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-container h2 {
+    text-align: center;
+    color: #e0e0e0;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.table-wrapper {
+    overflow-x: auto; /* Para responsividad en tablas grandes */
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #ccc;
+}
+
+.history-table th,
+.history-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+}
+
+.history-table th {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-weight: 600;
+}
+
+.history-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.history-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Colores de fila según el nivel de riesgo */
+.history-table .level-normal td {
+    /* Color de texto por defecto es suficiente */
+}
+
+.history-table .level-atencion td {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #FFC107;
+}
+
+.history-table .level-peligro td {
+    background-color: rgba(255, 87, 34, 0.15);
+    color: #FF5722;
+}
+
+.history-table .level-critico td {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #F44336;
+    font-weight: bold;
+}
+
+/* Estilo para el tooltip personalizado de la gráfica */
+.custom-tooltip {
+    background-color: rgba(30, 40, 50, 0.9) !important;
+    padding: 10px !important;
+    border: 1px solid #555 !important;
+    border-radius: 5px !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+.custom-tooltip .label {
+    color: #eee !important;
+    font-weight: bold;
+}
+
+.custom-tooltip .desc {
+    color: #ccc !important;
+}
+

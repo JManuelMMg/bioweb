@@ -1,0 +1,47 @@
+
+.realtime-chart-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1.5rem 2rem;
+    background-color: rgba(10, 25, 40, 0.8);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.realtime-chart-container h4 {
+    text-align: center;
+    color: #d0d0d0;
+    font-size: 1.3rem;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-weight: 500;
+}
+
+/* Estilo para el tooltip personalizado */
+.realtime-tooltip {
+    background-color: rgba(35, 50, 65, 0.95) !important;
+    padding: 10px 15px !important;
+    border: 1px solid #667788 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    color: #e0e0e0;
+}
+
+.realtime-tooltip .label {
+    color: #fff !important;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.realtime-tooltip .intro {
+    margin: 0;
+    color: #88ddff; /* Color que coincida con la línea de la gráfica */
+}
+
+/* Ajustes en los labels de los ejes de Recharts */
+.recharts-text.recharts-label tspan {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}

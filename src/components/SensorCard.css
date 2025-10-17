@@ -1,0 +1,68 @@
+
+.sensor-card {
+    background-color: rgba(28, 40, 51, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.5s ease;
+}
+
+.sensor-title {
+    color: #e0e0e0;
+    text-align: center;
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.card-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 1.5rem;
+}
+
+.gauge-container-card {
+    flex: 1;
+    max-width: 200px; /* Tamaño ajustado para el gauge dentro de la tarjeta */
+    min-width: 150px;
+}
+
+.realtime-chart-container {
+    flex: 2;
+    height: 200px; /* Altura fija para la gráfica de línea */
+}
+
+/* Fondos dinámicos para la tarjeta basados en el nivel de riesgo */
+.level-bg-normal {
+    background-color: rgba(1, 41, 5, 0.3);
+}
+.level-bg-atencion {
+    background-color: rgba(128, 97, 6, 0.3);
+}
+.level-bg-peligro {
+    background-color: rgba(128, 43, 17, 0.3);
+}
+.level-bg-critico {
+    background-color: rgba(116, 33, 27, 0.4);
+}
+
+/* Media query para pantallas más pequeñas */
+@media (max-width: 768px) {
+    .card-content {
+        flex-direction: column;
+    }
+
+    .gauge-container-card {
+        max-width: 180px;
+    }
+
+    .realtime-chart-container {
+        width: 100%;
+        height: 180px;
+    }
+}
